@@ -397,6 +397,93 @@ class Algorithms:
 
         # TODO Algorithm 8 goes here
 
+        if newpath:
+            self.i = 2
+            self.state = 1
+            m = len(W[0])
+            N = len(W)
+            assert (N >= 3, 'Non enough vehicle configurations.')
+            assert (m == 3)
+        else:
+            m = len(W[0])
+            N = len(W)
+            assert (N >= 3, 'Non enough vehicle configurations.')
+            assert (m == 3)
+
+        wi = [W[0, self.i], W[1, self.i], W[2, self.i]]
+        wiMinus = [W[0, self.i - 1], W[1, self.i - 1], W[2, self.i - 1]]
+        wiPlus = [W[0, self.i + 1], W[1, self.i + 1], W[2, self.i + 1]]
+
+        chi_i = Chi[self.i]
+        chi_minus = Chi[self.i - 1]
+        chi_plus = Chi[2]
+
+        dp = self.findDubinsParameters(self, wiMinus, chi_minus, wi, chi_i, R);
+
+        flag = np.nan
+        r = np.nan(3, 1)
+        q = np.nan(3, 1)
+        c = np.nan(3, 1)
+        rho = np.nan
+        lamb = np.nan
+
+        if self.state == 1:
+            flag = 2
+            c = dp.c_s
+            rho = R
+            lamb = dp.lambda_s
+            r = np.nan(3, 1)
+            q = np.nan(3, 1)
+            if in_half_plane(p, dp.z_1, -dp.q_1):
+                self.state = 2
+        elif self.state == 2:
+            flag = 2
+            r = np.nan(3, 1)
+            q = np.nan(3, 1)
+            c = dp.c_s
+            rho = R
+            lamb = dp.lambda_s
+            if in_half_plane(p, dp.z_1, dp.q_1):
+                self.state = 3
+        elif self.state == 3:
+            flag = 1
+            r = dp.z_1
+            q = dp.q_1
+            c = np.nan(3, 1)
+            rho = np.nan
+            lamb = np.nan
+            if in_half_plane(p, dp.z_2, dp.q_1):
+                self.state = 4
+        elif self.state == 4:
+            flag = 2
+            r = np.nan(3, 1)
+            q = np.nan(3, 1)
+            c = dp.c_e
+            rho = R
+            lamb = dp.lambda_e
+            if in_half_plane(p, dp.z_3, dp.q_3):
+                self.state = 5
+        elif self.state == 5:
+            flag = 2
+            r = np.nan(3, 1)
+            q = np.nan(3, 1)
+            c = dp.c_e
+            rho = R
+            lamb = dp.lambda_e
+            if in_half_plane(p, dp.z_3, dp.q_3):
+                self.i = self.i + 1
+                self.state = 1
+
+                self.findDubinsParameters(self, wiMinus, chi_minus, wi, chi_i, R);
+
+        else:
+            flag = np.nan
+            r = np.nan(3, 1)
+            q = np.nan(3, 1)
+            c = np.nan(3, 1)
+            rho = np.nan
+            lamb = np.nan
+
         return flag, r, q, c, rho, lamb, self.i, dp
 
     def Rz(th):
