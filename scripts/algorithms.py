@@ -253,13 +253,22 @@ class Algorithms:
 
         # TODO Algorithm 7 goes here
         pi = np.pi
-        assert np.linalg.norm(p_s[0:1] - p_e[0:1] >= 3*R)
+        chi_e = float(chi_e)
+        chi_s = float(chi_s)
 
-        el = [1,0,0]
-        c_rs = p_s + Rz(np.pi/2)*[np.cos(chi_s), np.sin(chi_s), 0]
-        c_ls = p_s + R * Rz(-np.pi / 2) * [np.cos(chi_s), np.sin(chi_s), 0]
-        c_re = p_e + R * Rz(np.pi / 2) * [np.cos(chi_e), np.sin(chi_e), 0]
-        c_le = p_e + R * Rz(-np.pi / 2) * [np.cos(chi_e), np.sin(chi_e), 0]
+        assert np.linalg.norm(p_s[0:2] - p_e[0:2]) >= 3*R
+
+        el = mat([1, 0, 0]).T
+
+        cs = np.cos(chi_s)
+        ss = np.sin(chi_s)
+        ce = np.cos(chi_e)
+        se = np.sin(chi_e)
+
+        c_rs = p_s + R * Rz(pi/2) * mat([cs, ss, 0]).T          # [np.cos(chi_s), np.sin(chi_s), 0]
+        c_ls = p_s + R * Rz(-pi / 2) * mat([cs, ss, 0]).T       # [np.cos(chi_s), np.sin(chi_s), 0]
+        c_re = p_e + R * Rz(pi / 2) * mat([ce, se, 0]).T        # [np.cos(chi_e), np.sin(chi_e), 0]
+        c_le = p_e + R * Rz(-pi / 2) * mat([ce, se, 0]).T     # [np.cos(chi_e), np.sin(chi_e), 0]
 
         #Case 1 R-S-R
         th = angle(c_re - c_rs)
@@ -270,18 +279,18 @@ class Algorithms:
         ell = np.linalg.norm(c_le-c_rs)
         th2 = th - pi/2 + np.arcsin(2*R/ell)
 
-        if np.isreal(th2) != True:
-            L2 = nan
+        if not np.isreal(th2):
+            L2 = np.nan
         else:
-            L2 = np.sqrt(ell**2-4*R**2) + R*(2*pi + (th2)%(2*pi) - (chi_s-pi/2)%(2*pi))%(2*pi) + R*(2*pi + (chi_e-pi/2)%(2*pi) - (th-pi/2)%(2*pi))%(2*pi)
+            L2 = np.sqrt(ell**2-4*R**2) + R*(2*pi + (th2)%(2*pi) - (chi_s-pi/2)%(2*pi))%(2*pi) + R*(2*pi + (th2 + pi)%(2*pi) - (chi_e + pi/2)%(2*pi))%(2*pi)
 
         #Case 3 L-S-R
         th = angle(c_re - c_ls)
-        ell = np.norm(c_re - c_ls)
+        ell = np.linalg.norm(c_re - c_ls)
         th2 = np.arccos(2 * R / ell)
 
-        if np.isreal(th2) != True:
-            L3 = nan
+        if not np.isreal(th2):
+            L3 = np.nan
         else:
             L3 = np.sqrt(ell**2 - 4*R**2) + R*(2*pi + (chi_s+pi/2)%(2*pi) - (th+th2)%(2*pi))%(2*pi) + R*(2*pi + (chi_e-pi/2)%(2*pi) - (th+th2-pi)%(2*pi))%(2*pi)
 
@@ -290,80 +299,82 @@ class Algorithms:
         L4 = np.linalg.norm(c_ls-c_le) + R*(2*pi + (chi_s+pi/2)%(2*pi) - (th+pi/2)%(2*pi))%(2*pi) + R*(2*pi + (th+pi/2)%(2*pi) - (chi_e+pi/2)%(2*pi))%(2*pi)
 
         # Define the parameters for the minimum length path
-        lengths = [L1, L2, L3, L4]
-        L = min(lengths)
-        i_min = 0
-        for i in range(3):
-            if lengths[i] == L:
-                i_min = i
-
-        if i_min == 0:
-            c_s = c_rs
-            lambda_s = 1
-            c_e = c_re
-            lambda_e = 1
-            q_1 = (c_e - c_s) / np.linalg.norm(c_e - c_s)
-            z_1 = c_s + R * Rz(-pi / 2) * q_1
-            z_2 = c_e + R * Rz(-pi / 2) * q_1
-
-        elif i_min == 1:
-            c_s = c_rs
-            lambda_s = 1
-            c_e = c_le
-            lambda_e = 1
-            ell = np.linalg.norm(c_e - c_s)
-            th = angle(c_e - c_s)
-            th2 = th - pi / 2 + np.arcsin(2 * R / ell)
-            q_1 = Rz(th2 + pi / 2) * el
-            z_1 = c_s + R * Rz(th2) * el
-            z_2 = c_e + R * Rz(th2 + pi) * el
-
-        elif i_min == 2:
-            c_s = c_ls
-            c_e = c_re
-            lambda_s = 1
-            lambda_e = +1
-            ell = np.linalg.norm(c_e - c_s)
-            th = angle(c_e - c_s)
-            th2 = np.arccos(2 * R / ell)
-            q_1 = Rz(th + th2 - pi / 2) * el
-            z_1 = c_s + R * Rz(th + th2) * el
-            z_2 = c_e + R * Rz(th + th2 - pi) * el
-
-        elif i_min == 3:
-            c_s = c_ls
-            c_e = c_le
-            lambda_s = 1
-            lambda_e = 1
-            q_1 = (c_e - c_s) / np.linalg.norm(c_e - c_s)
-            z_1 = c_s + R * Rz(pi / 2) * q_1
-            z_2 = c_e + R * Rz(pi / 2) * q_1
-
-        z_3 = p_e
-        q_3 = Rz(chi_e)*el
+        lengths = np.array([L1, L2, L3, L4])
+        L, i_min = np.min(lengths), np.argmin(lengths)
 
         # package output into DubinsParameters class
         dp = DubinsParameters()
 
-        # TODO populate dp members here
-        dp.L = L
-        dp.c_s = c_s
-        dp.lambda_s = lambda_s
-        dp.c_e = c_e
-        dp.lambda_e = lambda_e
-        dp.z_1 = z_1
-        dp.q_1 = q_1
-        dp.z_2 = z_2
-        dp.z_3 = z_3
-        dp.q_3 = q_3
+        if i_min == 0:
+            dp.c_s = c_rs
+            dp.lambda_s = 1
+            dp.c_e = c_re
+            dp.lambda_e = 1
+            dp.q_1 = (dp.c_e - dp.c_s) / np.linalg.norm(dp.c_e - dp.c_s)
+            dp.z_1 = dp.c_s + R * Rz(-pi / 2) * dp.q_1
+            dp.z_2 = dp.c_e + R * Rz(-pi / 2) * dp.q_1
+
+        elif i_min == 1:
+            dp.c_s = c_rs
+            dp.lambda_s = 1
+            dp.c_e = c_le
+            dp.lambda_e = -1
+            dp.ell = np.linalg.norm(dp.c_e - dp.c_s)
+            dp.th = float(angle(dp.c_e - dp.c_s))
+            th2 = dp.th - pi / 2 + np.arcsin(2 * R / dp.ell)
+            dp.q_1 = Rz(th2 + pi / 2) * el
+            dp.z_1 = dp.c_s + R * Rz(th2) * el
+            dp.z_2 = dp.c_e + R * Rz(th2 + pi) * el
+
+        elif i_min == 2:
+            dp.c_s = c_ls
+            dp.c_e = c_re
+            dp.lambda_s = -1
+            dp.lambda_e = 1
+            dp.ell = np.linalg.norm(dp.c_e - dp.c_s)
+            dp.th = float(angle(dp.c_e - dp.c_s))
+            th2 = np.arccos(2 * R / dp.ell)
+            dp.q_1 = Rz(dp.th + th2 - pi / 2) * el
+            dp.z_1 = dp.c_s + R * Rz(dp.th + th2) * el
+            dp.z_2 = dp.c_e + R * Rz(dp.th + th2 - pi) * el
+
+        elif i_min == 3:
+            dp.c_s = c_ls
+            dp.c_e = c_le
+            dp.lambda_s = -1
+            dp.lambda_e = -1
+            dp.q_1 = (dp.c_e - dp.c_s) / np.linalg.norm(dp.c_e - dp.c_s)
+            dp.z_1 = dp.c_s + R * Rz(pi / 2) * dp.q_1
+            dp.z_2 = dp.c_e + R * Rz(pi / 2) * dp.q_1
+
+        dp.z_3 = p_e
+        dp.q_3 = Rz(chi_e)*el
         dp.case = i_min
-        dp.lengths = [L1, L2, L3, L4]
-        dp.theta = th
-        dp.ell = ell
+        dp.lengths = lengths
         dp.c_rs = c_rs
         dp.c_ls = c_ls
         dp.c_re = c_re
         dp.c_le = c_le
+
+        # # TODO populate dp members here
+        # dp.L = L
+        # dp.c_s = c_s
+        # dp.lambda_s = lambda_s
+        # dp.c_e = c_e
+        # dp.lambda_e = lambda_e
+        # dp.z_1 = z_1
+        # dp.q_1 = q_1
+        # dp.z_2 = z_2
+        # dp.z_3 = z_3
+        # dp.q_3 = q_3
+        # dp.case = i_min
+        # dp.lengths = [L1, L2, L3, L4]
+        # dp.theta = th
+        # dp.ell = ell
+        # dp.c_rs = c_rs
+        # dp.c_ls = c_ls
+        # dp.c_re = c_re
+        # dp.c_le = c_le
 
         return dp
 
@@ -397,49 +408,45 @@ class Algorithms:
 
         # TODO Algorithm 8 goes here
 
+
+        if self.i is None:
+            self.i = 0
+            self.state = 0
         if newpath:
-            self.i = 2
+            self.i = 1
             self.state = 1
-            m = len(W[0])
-            N = len(W)
-            assert (N >= 3, 'Non enough vehicle configurations.')
+            [m,N] = W.shape
+            assert (N >= 3)
             assert (m == 3)
         else:
-            m = len(W[0])
-            N = len(W)
-            assert (N >= 3, 'Non enough vehicle configurations.')
+            [m, N] = W.shape
+            assert (N >= 3)
             assert (m == 3)
 
-        wi = [W[0, self.i], W[1, self.i], W[2, self.i]]
-        wiMinus = [W[0, self.i - 1], W[1, self.i - 1], W[2, self.i - 1]]
-        wiPlus = [W[0, self.i + 1], W[1, self.i + 1], W[2, self.i + 1]]
+        wi = W[:, self.i]
+        wiMinus = W[:, self.i-1]
 
         chi_i = Chi[self.i]
         chi_minus = Chi[self.i - 1]
-        chi_plus = Chi[2]
+        
+        dp = self.findDubinsParameters(wiMinus, chi_minus, wi, chi_i, R)
 
-        dp = self.findDubinsParameters(self, wiMinus, chi_minus, wi, chi_i, R);
-
-        flag = np.nan
-        r = np.nan(3, 1)
-        q = np.nan(3, 1)
-        c = np.nan(3, 1)
-        rho = np.nan
-        lamb = np.nan
+        flag = 1
+        r = mat([[0, 0, 0]]).T
+        q = mat([[0, 0, 0]]).T
+        c = mat([[0, 0, 0]]).T
+        rho = np.Inf
+        lamb = 1
 
         if self.state == 1:
             flag = 2
             c = dp.c_s
             rho = R
             lamb = dp.lambda_s
-            r = np.nan(3, 1)
-            q = np.nan(3, 1)
             if in_half_plane(p, dp.z_1, -dp.q_1):
                 self.state = 2
         elif self.state == 2:
             flag = 2
-            r = np.nan(3, 1)
-            q = np.nan(3, 1)
             c = dp.c_s
             rho = R
             lamb = dp.lambda_s
@@ -449,49 +456,37 @@ class Algorithms:
             flag = 1
             r = dp.z_1
             q = dp.q_1
-            c = np.nan(3, 1)
-            rho = np.nan
-            lamb = np.nan
             if in_half_plane(p, dp.z_2, dp.q_1):
                 self.state = 4
         elif self.state == 4:
             flag = 2
-            r = np.nan(3, 1)
-            q = np.nan(3, 1)
             c = dp.c_e
             rho = R
             lamb = dp.lambda_e
             if in_half_plane(p, dp.z_3, dp.q_3):
                 self.state = 5
-        elif self.state == 5:
+        else:
             flag = 2
-            r = np.nan(3, 1)
-            q = np.nan(3, 1)
             c = dp.c_e
             rho = R
             lamb = dp.lambda_e
             if in_half_plane(p, dp.z_3, dp.q_3):
-                self.i = self.i + 1
                 self.state = 1
-
-                self.findDubinsParameters(self, wiMinus, chi_minus, wi, chi_i, R);
-
-        else:
-            flag = np.nan
-            r = np.nan(3, 1)
-            q = np.nan(3, 1)
-            c = np.nan(3, 1)
-            rho = np.nan
-            lamb = np.nan
+                if self.i < N:
+                    self.i += 1
 
         return flag, r, q, c, rho, lamb, self.i, dp
 
     def Rz(th):
-        out = [[np.cos(th), -np.sin(th), 0],[np.sin(th), np.cos(th), 0],[0, 0, 1]]
-        return out
+        c = float(np.cos(theta))
+        s = float(np.sin(theta))
+
+        return mat([[c, -s, 0],
+                    [s, c, 0],
+                    [0, 0, 1]])
 
     def angle(v):
-        out = np.arctan2(v[0],v[1])
+        out = np.arctan2(v[1],v[0])
         return out
 
 class DubinsParameters:
